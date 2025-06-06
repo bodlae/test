@@ -1,1 +1,10 @@
-# first file
+# Example Project
+
+This repository demonstrates a minimal Python project managed with
+[Poetry](https://python-poetry.org/).  After cloning the repository you can
+install the dependencies and run the tests with:
+
+```bash
+poetry install
+poetry run pytest
+```
