@@ -234,168 +234,300 @@ function createSunHeatmapTexture(size = 256) {
 }
 
 // add some objects
-// ship as a patched rustbucket with plate segments and dents
 const shipGroup = new THREE.Group();
-const hullPalette = [0xc3c8ce, 0xb6bcc4, 0xd0d5db, 0xaeb5bd];
-const rustPatchPalette = [0x6a3125, 0x4f2319, 0x7a3f2f, 0x3b1f18, 0x5b2a1f, 0x2b1511];
-const detailPalette = [0xd6dbe2, 0xc7cdd5, 0xb9c0c9, 0x8e4f3a, 0x6a3125, 0x7a3f2f];
-const mainHullSize = new THREE.Vector3(2.7, 1.3, 6.2);
-const mainHull = createRustedSegment(mainHullSize, new THREE.Vector3(0, 0, 0), hullPalette[0]);
-shipGroup.add(mainHull);
+shipGroup.position.set(0,0,0);
+scene.add(shipGroup);
+let updateFusionExhaust = () => {};
+let currentShipSpec = null;
+let shipPerfReady = false;
+let activeOwnedShipId = null;
+let previewShipId = null;
+const ownedShipIds = new Set();
 
-function addPanelGridToHull(face, rows = 2, cols = 4) {
-    const hx = mainHullSize.x * 0.5;
-    const hy = mainHullSize.y * 0.5;
-    const hz = mainHullSize.z * 0.5;
-    const count = rows * cols; // 8 panels minimum per surface
+function randRange(min, max) {
+    return min + Math.random() * (max - min);
+}
 
-    for (let i = 0; i < count; i++) {
-        const r = Math.floor(i / cols);
-        const c = i % cols;
-        const u = (c + 0.5) / cols;
-        const v = (r + 0.5) / rows;
-        let size;
-        let pos;
-        if (face === 'top' || face === 'bottom') {
-            size = new THREE.Vector3(0.34, 0.06, 0.88);
-            const x = -hx * 0.72 + u * hx * 1.44;
-            const z = -hz * 0.74 + v * hz * 1.48;
-            const y = face === 'top' ? hy + 0.04 : -hy - 0.04;
-            pos = new THREE.Vector3(x, y, z);
-        } else if (face === 'left' || face === 'right') {
-            size = new THREE.Vector3(0.06, 0.32, 0.94);
-            const y = -hy * 0.72 + u * hy * 1.44;
-            const z = -hz * 0.74 + v * hz * 1.48;
-            const x = face === 'right' ? hx + 0.04 : -hx - 0.04;
-            pos = new THREE.Vector3(x, y, z);
-        } else {
-            size = new THREE.Vector3(0.38, 0.3, 0.06);
-            const x = -hx * 0.72 + u * hx * 1.44;
-            const y = -hy * 0.72 + v * hy * 1.44;
-            const z = face === 'front' ? -hz - 0.04 : hz + 0.04;
-            pos = new THREE.Vector3(x, y, z);
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateShipName() {
+    const a = ['Rook', 'Nova', 'Cinder', 'Atlas', 'Warden', 'Halo', 'Argent', 'Kestrel', 'Ion', 'Vanguard'];
+    const b = ['Runner', 'Hauler', 'Moth', 'Sparrow', 'Drift', 'Lancer', 'Courier', 'Jackal', 'Forge', 'Pioneer'];
+    return `${pick(a)} ${pick(b)}`;
+}
+
+function createRandomShipSpec(id, forcedName = null) {
+    const hullW = randRange(2.3, 4.2);
+    const hullH = randRange(1.0, 1.9);
+    const hullL = randRange(5.2, 8.6);
+    const podLen = randRange(1.8, 3.6);
+    const podOffset = randRange(1.6, 2.5);
+    const rustPatchPalette = [0x6a3125, 0x4f2319, 0x7a3f2f, 0x3b1f18, 0x5b2a1f, 0x2b1511];
+    const signaturePalette = [0x3dd5ff, 0xff6c3d, 0x72ff8f, 0xffde59, 0xc18dff, 0xff5ca8];
+    return {
+        id,
+        name: forcedName || generateShipName(),
+        price: Math.round(randRange(7000, 13000)),
+        hullPalette: [0xc9d0d9, 0xb6bec8, 0xd6dde5, 0xaab4bf],
+        detailPalette: [0xe2e8ef, 0xd1d8e0, 0xc1c9d2, 0x8e4f3a, 0x6a3125, 0x7a3f2f],
+        rustPatchPalette,
+        hullW,
+        hullH,
+        hullL,
+        podLen,
+        podOffset,
+        podH: randRange(0.6, 1.0),
+        noseR: randRange(0.9, 1.4),
+        noseL: randRange(2.0, 3.1),
+        rearBlockW: randRange(1.4, 2.4),
+        rearBlockH: randRange(0.7, 1.2),
+        rearBlockL: randRange(0.8, 1.4),
+        patchCount: 8 + Math.floor(Math.random() * 12),
+        signatureColor: pick(signaturePalette),
+        cockpitType: Math.floor(Math.random() * 4),
+        accel: randRange(5.5, 10.5),
+        speed: randRange(180, 320)
+    };
+}
+
+function buildShipModel(spec) {
+    const modelRoot = new THREE.Group();
+    const mainHullSize = new THREE.Vector3(spec.hullW, spec.hullH, spec.hullL);
+    const mainHull = createRustedSegment(mainHullSize, new THREE.Vector3(0, 0, 0), spec.hullPalette[0]);
+    modelRoot.add(mainHull);
+
+    function addPanelGridToHull(face, rows = 2, cols = 4) {
+        const hx = mainHullSize.x * 0.5;
+        const hy = mainHullSize.y * 0.5;
+        const hz = mainHullSize.z * 0.5;
+        const count = rows * cols;
+        for (let i = 0; i < count; i++) {
+            const r = Math.floor(i / cols);
+            const c = i % cols;
+            const u = (c + 0.5) / cols;
+            const v = (r + 0.5) / rows;
+            let size;
+            let pos;
+            if (face === 'top' || face === 'bottom') {
+                size = new THREE.Vector3(0.34, 0.06, Math.max(0.5, spec.hullL * 0.14));
+                const x = -hx * 0.72 + u * hx * 1.44;
+                const z = -hz * 0.74 + v * hz * 1.48;
+                const y = face === 'top' ? hy + 0.04 : -hy - 0.04;
+                pos = new THREE.Vector3(x, y, z);
+            } else if (face === 'left' || face === 'right') {
+                size = new THREE.Vector3(0.06, 0.32, Math.max(0.5, spec.hullL * 0.15));
+                const y = -hy * 0.72 + u * hy * 1.44;
+                const z = -hz * 0.74 + v * hz * 1.48;
+                const x = face === 'right' ? hx + 0.04 : -hx - 0.04;
+                pos = new THREE.Vector3(x, y, z);
+            } else {
+                size = new THREE.Vector3(0.36, 0.28, 0.06);
+                const x = -hx * 0.72 + u * hx * 1.44;
+                const y = -hy * 0.72 + v * hy * 1.44;
+                const z = face === 'front' ? -hz - 0.04 : hz + 0.04;
+                pos = new THREE.Vector3(x, y, z);
+            }
+            const panelColor = spec.detailPalette[Math.floor(Math.random() * spec.detailPalette.length)];
+            mainHull.add(createRustedSegment(size, pos, panelColor));
         }
-        const panelColor = detailPalette[Math.floor(Math.random() * detailPalette.length)];
-        const panel = createRustedSegment(size, pos, panelColor);
-        mainHull.add(panel);
+    }
+
+    ['top', 'bottom', 'left', 'right', 'front', 'back'].forEach((face) => addPanelGridToHull(face));
+    const nose = new THREE.Mesh(
+        new THREE.ConeGeometry(spec.noseR, spec.noseL, 5),
+        createRustedMaterial(spec.hullPalette[2])
+    );
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 0, -spec.hullL * 0.5 - spec.noseL * 0.45);
+    nose.userData.baseColor = spec.hullPalette[2];
+    nose.add(
+        new THREE.LineSegments(
+            new THREE.EdgesGeometry(nose.geometry),
+            new THREE.LineBasicMaterial({ color: 0x1a1c1f })
+        )
+    );
+    modelRoot.add(nose);
+
+    modelRoot.add(createRustedSegment(
+        new THREE.Vector3(0.9, spec.podH, spec.podLen),
+        new THREE.Vector3(-spec.podOffset, -0.15, -0.8),
+        spec.hullPalette[1]
+    ));
+    modelRoot.add(createRustedSegment(
+        new THREE.Vector3(0.9, spec.podH, spec.podLen),
+        new THREE.Vector3(spec.podOffset, -0.15, -0.8),
+        spec.hullPalette[1]
+    ));
+    modelRoot.add(createRustedSegment(
+        new THREE.Vector3(spec.rearBlockW, spec.rearBlockH, spec.rearBlockL),
+        new THREE.Vector3(0, 0.05, spec.hullL * 0.52),
+        spec.hullPalette[3]
+    ));
+
+    // signature color accent so each ship is identifiable at a glance
+    modelRoot.add(createRustedSegment(
+        new THREE.Vector3(spec.hullW * 0.45, 0.08, Math.max(0.7, spec.hullL * 0.22)),
+        new THREE.Vector3(0, spec.hullH * 0.55 + 0.06, -spec.hullL * 0.08),
+        spec.signatureColor
+    ));
+
+    // varied cockpit styles
+    let cockpit;
+    if (spec.cockpitType === 0) {
+        cockpit = new THREE.Mesh(
+            new THREE.SphereGeometry(0.52 + spec.hullW * 0.05, 14, 10),
+            new THREE.MeshStandardMaterial({ color: 0x6ea0bd, roughness: 0.2, metalness: 0.45, transparent: true, opacity: 0.9 })
+        );
+        cockpit.scale.set(1.15, 0.72, 1.35);
+        cockpit.position.set(0, spec.hullH * 0.36, -spec.hullL * 0.22);
+    } else if (spec.cockpitType === 1) {
+        cockpit = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.34, 0.48, 1.25, 10),
+            new THREE.MeshStandardMaterial({ color: 0x6ea0bd, roughness: 0.24, metalness: 0.4, transparent: true, opacity: 0.88 })
+        );
+        cockpit.rotation.z = Math.PI / 2;
+        cockpit.scale.set(1, 0.85, 1.2);
+        cockpit.position.set(0, spec.hullH * 0.34, -spec.hullL * 0.18);
+    } else if (spec.cockpitType === 2) {
+        cockpit = new THREE.Mesh(
+            new THREE.BoxGeometry(0.95 + spec.hullW * 0.1, 0.45, 1.15),
+            new THREE.MeshStandardMaterial({ color: 0x7fb3cb, roughness: 0.2, metalness: 0.38, transparent: true, opacity: 0.86 })
+        );
+        cockpit.position.set(0, spec.hullH * 0.32, -spec.hullL * 0.2);
+    } else {
+        cockpit = new THREE.Mesh(
+            new THREE.ConeGeometry(0.58 + spec.hullW * 0.05, 1.3, 8),
+            new THREE.MeshStandardMaterial({ color: 0x79a9c6, roughness: 0.22, metalness: 0.42, transparent: true, opacity: 0.86 })
+        );
+        cockpit.rotation.x = Math.PI / 2;
+        cockpit.position.set(0, spec.hullH * 0.3, -spec.hullL * 0.24);
+    }
+    cockpit.userData.baseColor = spec.signatureColor;
+    modelRoot.add(cockpit);
+    for (let i = 0; i < spec.patchCount; i++) {
+        modelRoot.add(
+            createRustedSegment(
+                new THREE.Vector3(0.35 + Math.random() * 0.55, 0.08 + Math.random() * 0.1, 0.5 + Math.random() * 0.9),
+                new THREE.Vector3(
+                    (Math.random() - 0.5) * (spec.hullW * 0.7),
+                    (Math.random() - 0.5) * (spec.hullH * 0.8),
+                    -spec.hullL * 0.35 + Math.random() * (spec.hullL * 0.75)
+                ),
+                spec.rustPatchPalette[Math.floor(Math.random() * spec.rustPatchPalette.length)]
+            )
+        );
+    }
+
+    // fusion exhaust
+    const nozzle = new THREE.Mesh(
+        new THREE.TorusGeometry(0.72 + spec.hullW * 0.07, 0.12, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0x8d96a2, roughness: 0.6, metalness: 0.4 })
+    );
+    nozzle.rotation.x = Math.PI / 2;
+    nozzle.scale.y = 0.72;
+    nozzle.position.set(0, 0.05, spec.hullL * 0.61);
+    nozzle.userData.baseColor = 0x8d96a2;
+    modelRoot.add(nozzle);
+
+    const exhaustOuter = new THREE.Mesh(
+        new THREE.ConeGeometry(0.6 + spec.hullW * 0.05, 2.5 + spec.hullL * 0.16, 18, 1, true),
+        new THREE.MeshBasicMaterial({
+            color: 0x67cfff,
+            transparent: true,
+            opacity: 0.46,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        })
+    );
+    exhaustOuter.rotation.x = Math.PI / 2;
+    exhaustOuter.position.set(0, 0.05, spec.hullL * 0.82);
+    exhaustOuter.userData.skipShipTint = true;
+    modelRoot.add(exhaustOuter);
+
+    const exhaustInner = new THREE.Mesh(
+        new THREE.ConeGeometry(0.28 + spec.hullW * 0.02, 1.8 + spec.hullL * 0.12, 16, 1, true),
+        new THREE.MeshBasicMaterial({
+            color: 0xe8f7ff,
+            transparent: true,
+            opacity: 0.78,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        })
+    );
+    exhaustInner.rotation.x = Math.PI / 2;
+    exhaustInner.position.set(0, 0.05, spec.hullL * 0.77);
+    exhaustInner.userData.skipShipTint = true;
+    modelRoot.add(exhaustInner);
+
+    const exhaustGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.42, 12, 10),
+        new THREE.MeshBasicMaterial({
+            color: 0xcdf0ff,
+            transparent: true,
+            opacity: 0.72,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+    exhaustGlow.scale.set(1.0, 0.64, 1.5);
+    exhaustGlow.position.set(0, 0.05, spec.hullL * 0.66);
+    exhaustGlow.userData.skipShipTint = true;
+    modelRoot.add(exhaustGlow);
+
+    const exhaustLight = new THREE.PointLight(0x8ad8ff, 0.8, 85, 1.9);
+    exhaustLight.position.set(0, 0.05, spec.hullL * 0.75);
+    modelRoot.add(exhaustLight);
+
+    function updateExhaust(time, thrusting) {
+        const pulse = 0.8 + 0.2 * Math.sin(time * 35);
+        const power = thrusting ? (1.15 + 0.35 * pulse) : (0.5 + 0.1 * pulse);
+        exhaustOuter.scale.set(1, 1, power);
+        exhaustInner.scale.set(1, 1, 0.9 * power);
+        exhaustGlow.scale.set(1.0 + 0.18 * pulse, 0.64, 1.2 + 0.52 * power);
+        exhaustOuter.material.opacity = thrusting ? 0.58 : 0.26;
+        exhaustInner.material.opacity = thrusting ? 0.9 : 0.46;
+        exhaustGlow.material.opacity = thrusting ? 0.86 : 0.42;
+        exhaustLight.intensity = thrusting ? 1.9 + 0.55 * pulse : 0.7 + 0.18 * pulse;
+    }
+
+    return { modelRoot, updateExhaust };
+}
+
+function applyShipSpec(spec) {
+    if (shipGroup.userData.modelRoot) shipGroup.remove(shipGroup.userData.modelRoot);
+    const built = buildShipModel(spec);
+    shipGroup.add(built.modelRoot);
+    shipGroup.userData.modelRoot = built.modelRoot;
+    updateFusionExhaust = (time) => {
+        const thrusting = !docked && keys.accel && fuel > 0;
+        built.updateExhaust(time, thrusting);
+    };
+    currentShipSpec = spec;
+    if (shipPerfReady) {
+        accelerationRate = spec.accel;
+        maxSpeed = spec.speed;
     }
 }
 
-addPanelGridToHull('top');
-addPanelGridToHull('bottom');
-addPanelGridToHull('left');
-addPanelGridToHull('right');
-addPanelGridToHull('front');
-addPanelGridToHull('back');
-const nose = new THREE.Mesh(
-    new THREE.ConeGeometry(1.08, 2.4, 5),
-    createRustedMaterial(hullPalette[2])
-);
-nose.rotation.x = Math.PI / 2; // point forward along -Z
-nose.position.set(0, 0, -4.4);
-nose.userData.baseColor = hullPalette[2];
-nose.add(
-    new THREE.LineSegments(
-        new THREE.EdgesGeometry(nose.geometry),
-        new THREE.LineBasicMaterial({ color: 0x1a1c1f })
-    )
-);
-shipGroup.add(nose);
-shipGroup.add(createRustedSegment(new THREE.Vector3(0.9, 0.7, 2.5), new THREE.Vector3(-1.8, -0.15, -0.8), hullPalette[1]));
-shipGroup.add(createRustedSegment(new THREE.Vector3(0.9, 0.7, 2.5), new THREE.Vector3(1.8, -0.15, -0.8), hullPalette[1]));
-shipGroup.add(createRustedSegment(new THREE.Vector3(1.9, 0.9, 0.9), new THREE.Vector3(0, 0.05, 3.25), hullPalette[3]));
-for (let i = 0; i < 12; i++) {
-    shipGroup.add(
-        createRustedSegment(
-            new THREE.Vector3(0.35 + Math.random() * 0.55, 0.08 + Math.random() * 0.1, 0.5 + Math.random() * 0.9),
-            new THREE.Vector3(
-                (Math.random() - 0.5) * 1.8,
-                (Math.random() - 0.5) * 0.85,
-                -2.2 + Math.random() * 4.7
-            ),
-            rustPatchPalette[Math.floor(Math.random() * rustPatchPalette.length)]
-        )
-    );
-}
-
-// fusion exhaust: oval nozzle with white/blue plume
-const nozzle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.86, 0.12, 8, 24),
-    new THREE.MeshStandardMaterial({ color: 0x8d96a2, roughness: 0.6, metalness: 0.4 })
-);
-nozzle.rotation.x = Math.PI / 2;
-nozzle.scale.y = 0.72; // oval mouth
-nozzle.position.set(0, 0.05, 3.82);
-nozzle.userData.baseColor = 0x8d96a2;
-shipGroup.add(nozzle);
-
-const exhaustOuter = new THREE.Mesh(
-    new THREE.ConeGeometry(0.74, 3.0, 18, 1, true),
-    new THREE.MeshBasicMaterial({
-        color: 0x67cfff,
-        transparent: true,
-        opacity: 0.46,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-    })
-);
-exhaustOuter.rotation.x = Math.PI / 2;
-exhaustOuter.position.set(0, 0.05, 5.22);
-exhaustOuter.userData.skipShipTint = true;
-shipGroup.add(exhaustOuter);
-
-const exhaustInner = new THREE.Mesh(
-    new THREE.ConeGeometry(0.34, 2.2, 16, 1, true),
-    new THREE.MeshBasicMaterial({
-        color: 0xe8f7ff,
-        transparent: true,
-        opacity: 0.78,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-    })
-);
-exhaustInner.rotation.x = Math.PI / 2;
-exhaustInner.position.set(0, 0.05, 4.9);
-exhaustInner.userData.skipShipTint = true;
-shipGroup.add(exhaustInner);
-
-const exhaustGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.42, 12, 10),
-    new THREE.MeshBasicMaterial({
-        color: 0xcdf0ff,
-        transparent: true,
-        opacity: 0.72,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    })
-);
-exhaustGlow.scale.set(1.0, 0.64, 1.5);
-exhaustGlow.position.set(0, 0.05, 4.1);
-exhaustGlow.userData.skipShipTint = true;
-shipGroup.add(exhaustGlow);
-
-const exhaustLight = new THREE.PointLight(0x8ad8ff, 0.8, 85, 1.9);
-exhaustLight.position.set(0, 0.05, 4.65);
-shipGroup.add(exhaustLight);
-
-function updateFusionExhaust(time) {
-    const thrusting = !docked && keys.accel && fuel > 0;
-    const pulse = 0.8 + 0.2 * Math.sin(time * 35);
-    const power = thrusting ? (1.15 + 0.35 * pulse) : (0.5 + 0.1 * pulse);
-
-    exhaustOuter.scale.set(1, 1, power);
-    exhaustInner.scale.set(1, 1, 0.9 * power);
-    exhaustGlow.scale.set(1.0 + 0.18 * pulse, 0.64, 1.2 + 0.52 * power);
-
-    exhaustOuter.material.opacity = thrusting ? 0.58 : 0.26;
-    exhaustInner.material.opacity = thrusting ? 0.9 : 0.46;
-    exhaustGlow.material.opacity = thrusting ? 0.86 : 0.42;
-    exhaustLight.intensity = thrusting ? 1.9 + 0.55 * pulse : 0.7 + 0.18 * pulse;
-}
-shipGroup.position.set(0,0,0);
-scene.add(shipGroup);
+const starterShipSpec = {
+    ...createRandomShipSpec('starter', 'Rust Finch'),
+    price: 0,
+    accel: 6.5,
+    speed: 210
+};
+const shipMarketOffers = [
+    createRandomShipSpec('model-1'),
+    createRandomShipSpec('model-2'),
+    createRandomShipSpec('model-3')
+];
+const shipCatalog = new Map([starterShipSpec, ...shipMarketOffers].map((s) => [s.id, s]));
+ownedShipIds.add(starterShipSpec.id);
+activeOwnedShipId = starterShipSpec.id;
+applyShipSpec(starterShipSpec);
 
 const stationFrameMat = new THREE.LineBasicMaterial({ color: 0x101010 });
 const tubeMat = new THREE.MeshBasicMaterial({ color: 0x6d7684 });
@@ -493,7 +625,9 @@ function createStationAt(worldPosition, label, variant = {}) {
         addTubeBetween(new THREE.Vector3(0, -2, 0), panel.position, 0.7);
     }
 
-    const dockLocalPoint = new THREE.Vector3(0, 30 + Math.random() * 10, 0);
+    const maxSpineY = Math.max(...spineHeights);
+    const dockHeight = maxSpineY + 18 + Math.random() * 8;
+    const dockLocalPoint = new THREE.Vector3(0, dockHeight, 0);
     const dockRingGeom = new THREE.TorusGeometry(10, 0.35, 8, 64);
     const dockRingMat = new THREE.MeshBasicMaterial({ color: dockRingColor, wireframe: true });
     const dockRing = new THREE.Mesh(dockRingGeom, dockRingMat);
@@ -504,7 +638,9 @@ function createStationAt(worldPosition, label, variant = {}) {
     const dockSupportCount = 6;
     const dockSupportInnerRadius = 2.8;
     const dockSupportOuterRadius = 10;
-    const dockSupportY = 24;
+    const dockSupportY = maxSpineY + 6;
+    // ensure ring support struts are physically connected to the station spine
+    addTubeBetween(new THREE.Vector3(0, maxSpineY, 0), new THREE.Vector3(0, dockSupportY, 0), 1.0);
     for (let i = 0; i < dockSupportCount; i++) {
         const angle = (i / dockSupportCount) * Math.PI * 2;
         const inner = new THREE.Vector3(
@@ -574,6 +710,31 @@ const planetConfigs = [
     { radius: 92, orbit: 1320, angle: 3.5, y: 24 },
     { radius: 64, orbit: 1720, angle: 4.65, y: -20 }
 ];
+
+const tradeGoods = [
+    { id: 'ore', name: 'Ore', base: 42 },
+    { id: 'tech', name: 'Tech', base: 120 },
+    { id: 'meds', name: 'Meds', base: 78 }
+];
+
+function createStationMarket(idx) {
+    const profiles = [
+        { ore: 0.62, tech: 1.5, meds: 0.9 },
+        { ore: 1.45, tech: 0.7, meds: 1.25 },
+        { ore: 0.82, tech: 1.3, meds: 0.65 },
+        { ore: 1.22, tech: 0.78, meds: 1.4 },
+        { ore: 0.7, tech: 1.05, meds: 1.45 }
+    ];
+    const p = profiles[idx % profiles.length];
+    const market = {};
+    for (const g of tradeGoods) {
+        const buy = Math.round(g.base * p[g.id]);
+        const sell = Math.max(1, Math.round(buy * 0.8));
+        market[g.id] = { buy, sell };
+    }
+    return market;
+}
+
 planetConfigs.forEach((cfg, idx) => {
     const px = sun.position.x + Math.cos(cfg.angle) * cfg.orbit;
     const pz = sun.position.z + Math.sin(cfg.angle) * cfg.orbit;
@@ -607,6 +768,7 @@ planetConfigs.forEach((cfg, idx) => {
             22 + Math.random() * 8
         ]
     });
+    stationData.market = createStationMarket(idx);
     systemStations.push(stationData);
     targetBodies.push(stationData.group);
 });
@@ -641,10 +803,10 @@ sun.userData.bodyName = 'Helios Crown';
 targetBodies.push(sun);
 
 // player state
-let credits = 1200;
+let credits = 60000;
 let fuel = 100;
 let hull = 100;
-let cargo = 0;
+const cargoHold = { ore: 0, tech: 0, meds: 0 };
 const cargoCapacity = 40;
 let engineLevel = 1;
 
@@ -658,12 +820,202 @@ stationScreen.style.zIndex = '25';
 stationScreen.style.fontFamily = 'monospace';
 stationScreen.style.color = '#9efca6';
 stationScreen.innerHTML = `
-<div style="max-width:760px;margin:40px auto;border:1px solid #2ee35f;background:rgba(0,12,0,0.9);padding:18px;line-height:1.45;">
+<div style="max-width:1080px;margin:40px auto;border:1px solid #2ee35f;background:rgba(0,12,0,0.9);padding:18px;line-height:1.45;">
   <div style="font-size:22px;margin-bottom:10px;">STATION DOCK CONTROL</div>
-  <div id="stationDockInfo"></div>
-  <div style="margin-top:12px;color:#ffd27a;">Press <b>Q</b> to undock</div>
+  <div style="display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start;">
+    <div>
+      <div id="stationDockInfo"></div>
+      <div id="stationMarket" style="margin-top:12px;border-top:1px solid rgba(46,227,95,0.4);padding-top:10px;"></div>
+      <div id="stationShipyard" style="margin-top:12px;border-top:1px solid rgba(46,227,95,0.4);padding-top:10px;"></div>
+      <div id="marketLog" style="margin-top:8px;color:#ffd27a;min-height:20px;"></div>
+      <div style="margin-top:12px;color:#ffd27a;">Press <b>Q</b> to undock</div>
+    </div>
+    <div style="border:1px solid rgba(46,227,95,0.45);padding:8px;background:rgba(0,0,0,0.35);">
+      <div style="margin-bottom:6px;">Ship Preview</div>
+      <canvas id="shipPreviewCanvas" width="320" height="220" style="width:100%;height:220px;display:block;background:rgba(5,8,12,0.9);border:1px solid rgba(140,170,190,0.35);"></canvas>
+      <div id="shipPreviewInfo" style="margin-top:8px;color:#bfe4ff;min-height:60px;"></div>
+    </div>
+  </div>
 </div>`;
 document.body.appendChild(stationScreen);
+let shipPreviewRenderer = null;
+let shipPreviewScene = null;
+let shipPreviewCamera = null;
+let shipPreviewModel = null;
+let shipPreviewSpecId = null;
+
+function getCargoTotal() {
+    return cargoHold.ore + cargoHold.tech + cargoHold.meds;
+}
+
+function setMarketLog(text) {
+    const logEl = document.getElementById('marketLog');
+    if (logEl) logEl.textContent = text;
+}
+
+function refreshStationMarketUI() {
+    const marketEl = document.getElementById('stationMarket');
+    if (!marketEl || !activeDockStation) return;
+    const m = activeDockStation.market;
+    const rows = tradeGoods.map((g) => {
+        const item = m[g.id];
+        return `
+            <div style="display:grid;grid-template-columns:120px 120px 120px 1fr;gap:8px;align-items:center;margin:4px 0;">
+                <div>${g.name}: ${cargoHold[g.id]}</div>
+                <div>Buy ${item.buy} cr</div>
+                <div>Sell ${item.sell} cr</div>
+                <div>
+                    <button data-trade="buy" data-good="${g.id}" style="margin-right:6px;">Buy 5</button>
+                    <button data-trade="sell" data-good="${g.id}">Sell 5</button>
+                </div>
+            </div>`;
+    }).join('');
+    marketEl.innerHTML = `<div style="margin-bottom:6px;">Market prices</div>${rows}`;
+}
+
+function refreshShipyardUI() {
+    const shipyardEl = document.getElementById('stationShipyard');
+    if (!shipyardEl) return;
+    const rows = shipMarketOffers.map((s) => {
+        const owned = ownedShipIds.has(s.id);
+        const active = activeOwnedShipId === s.id && previewShipId === null;
+        const previewing = previewShipId === s.id && !owned;
+        return `
+            <div style="display:grid;grid-template-columns:170px 120px 130px 1fr;gap:8px;align-items:center;margin:5px 0;">
+                <div>${s.name}</div>
+                <div>${Math.round(s.speed)} max / ${s.accel.toFixed(1)} acc</div>
+                <div>${owned ? (active ? 'Owned (Active)' : 'Owned') : `${s.price} cr`}</div>
+                <div>
+                    <button data-ship-action="preview" data-ship-id="${s.id}" style="margin-right:6px;">Preview</button>
+                    ${
+                        owned
+                            ? `<button data-ship-action="equip" data-ship-id="${s.id}" ${active ? 'disabled' : ''}>Equip</button>`
+                            : `<button data-ship-action="buy" data-ship-id="${s.id}">Buy</button>`
+                    }
+                    ${previewing ? `<span style="margin-left:8px;color:#9fd7ff;">Previewing</span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    shipyardEl.innerHTML = `<div style="margin-bottom:6px;">Shipyard</div>${rows}`;
+}
+
+function ensureShipPreviewRenderer() {
+    const canvas = document.getElementById('shipPreviewCanvas');
+    if (!canvas) return false;
+    if (!shipPreviewRenderer) {
+        shipPreviewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        shipPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        shipPreviewScene = new THREE.Scene();
+        shipPreviewCamera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+        // side profile preview camera
+        shipPreviewCamera.position.set(10.8, 1.45, 0);
+        shipPreviewCamera.lookAt(0, 0, 0);
+        const dir = new THREE.DirectionalLight(0xd5edff, 1.2);
+        dir.position.set(5, 3, 1.5);
+        shipPreviewScene.add(dir);
+        shipPreviewScene.add(new THREE.AmbientLight(0x8aa1b8, 0.55));
+    }
+    const w = canvas.clientWidth || canvas.width || 320;
+    const h = canvas.clientHeight || canvas.height || 220;
+    shipPreviewRenderer.setSize(w, h, false);
+    shipPreviewCamera.aspect = w / h;
+    shipPreviewCamera.updateProjectionMatrix();
+    return true;
+}
+
+function setShipPreview(spec) {
+    if (!spec) return;
+    if (!ensureShipPreviewRenderer()) return;
+    if (shipPreviewSpecId !== spec.id || !shipPreviewModel) {
+        if (shipPreviewModel) shipPreviewScene.remove(shipPreviewModel);
+        const built = buildShipModel(spec);
+        shipPreviewModel = built.modelRoot;
+        shipPreviewModel.position.set(0, -0.15, 0);
+        shipPreviewScene.add(shipPreviewModel);
+        shipPreviewSpecId = spec.id;
+    }
+    const info = document.getElementById('shipPreviewInfo');
+    if (info) {
+        info.innerHTML =
+            `${spec.name}<br>` +
+            `Speed: ${Math.round(spec.speed)}<br>` +
+            `Accel: ${spec.accel.toFixed(1)}<br>` +
+            `Price: ${ownedShipIds.has(spec.id) ? 'Owned' : `${spec.price} cr`}`;
+    }
+}
+
+function clearShipPreview() {
+    previewShipId = null;
+    if (shipPreviewModel && shipPreviewScene) {
+        shipPreviewScene.remove(shipPreviewModel);
+        shipPreviewModel = null;
+    }
+    shipPreviewSpecId = null;
+    const info = document.getElementById('shipPreviewInfo');
+    if (info) info.textContent = 'No preview selected.';
+}
+
+function tradeCommodity(type, goodId, qty = 5) {
+    if (!activeDockStation) return;
+    const good = tradeGoods.find((g) => g.id === goodId);
+    if (!good) return;
+    const marketItem = activeDockStation.market[goodId];
+    if (!marketItem) return;
+
+    if (type === 'buy') {
+        const room = cargoCapacity - getCargoTotal();
+        const actualQty = Math.min(qty, room);
+        if (actualQty <= 0) return setMarketLog('Cargo hold is full.');
+        const totalCost = marketItem.buy * actualQty;
+        if (credits < totalCost) return setMarketLog('Not enough credits.');
+        credits -= totalCost;
+        cargoHold[goodId] += actualQty;
+        setMarketLog(`Bought ${actualQty} ${good.name} for ${totalCost} cr.`);
+    } else {
+        const actualQty = Math.min(qty, cargoHold[goodId]);
+        if (actualQty <= 0) return setMarketLog(`No ${good.name} in cargo.`);
+        const totalRevenue = marketItem.sell * actualQty;
+        credits += totalRevenue;
+        cargoHold[goodId] -= actualQty;
+        setMarketLog(`Sold ${actualQty} ${good.name} for ${totalRevenue} cr.`);
+    }
+    showStationScreen();
+}
+
+stationScreen.addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-trade]');
+    if (button && docked) {
+        clearShipPreview();
+        tradeCommodity(button.dataset.trade, button.dataset.good, 5);
+        return;
+    }
+    const shipBtn = e.target.closest('button[data-ship-action]');
+    if (!shipBtn || !docked) return;
+    const shipId = shipBtn.dataset.shipId;
+    const action = shipBtn.dataset.shipAction;
+    const spec = shipCatalog.get(shipId);
+    if (!spec) return;
+    if (action === 'preview') {
+        previewShipId = shipId;
+        setShipPreview(spec);
+        setMarketLog(`Previewing ${spec.name}.`);
+    } else if (action === 'buy') {
+        if (credits < spec.price) return setMarketLog(`Need ${spec.price} credits to buy ${spec.name}.`);
+        credits -= spec.price;
+        ownedShipIds.add(shipId);
+        activeOwnedShipId = shipId;
+        clearShipPreview();
+        applyShipSpec(spec);
+        setMarketLog(`Purchased ${spec.name}.`);
+    } else if (action === 'equip') {
+        activeOwnedShipId = shipId;
+        clearShipPreview();
+        applyShipSpec(spec);
+        setMarketLog(`Equipped ${spec.name}.`);
+    }
+    showStationScreen();
+});
 
 function showStationScreen() {
     const info = document.getElementById('stationDockInfo');
@@ -672,13 +1024,28 @@ function showStationScreen() {
         info.innerHTML =
             `${stationLabel} docked. Docking clamps engaged.<br>` +
             `Hull: ${hull.toFixed(1)}% | Fuel: ${fuel.toFixed(1)}%<br>` +
-            `Credits: ${credits} | Cargo: ${cargo}/${cargoCapacity} | Engine: ${engineLevel}`;
+            `Credits: ${credits} | Cargo: ${getCargoTotal()}/${cargoCapacity} | Engine: ${engineLevel}`;
     }
+    refreshStationMarketUI();
+    refreshShipyardUI();
     stationScreen.style.display = 'block';
+    if (previewShipId) {
+        const previewSpec = shipCatalog.get(previewShipId);
+        if (previewSpec) setShipPreview(previewSpec);
+    } else {
+        const info = document.getElementById('shipPreviewInfo');
+        if (info) info.textContent = 'No preview selected.';
+    }
 }
 
 function hideStationScreen() {
     stationScreen.style.display = 'none';
+}
+
+function renderShipPreview(delta) {
+    if (!shipPreviewRenderer || !shipPreviewScene || !shipPreviewCamera || !shipPreviewModel) return;
+    shipPreviewModel.rotation.y += delta * 0.8;
+    shipPreviewRenderer.render(shipPreviewScene, shipPreviewCamera);
 }
 
 function getPointedBody() {
@@ -725,6 +1092,11 @@ let cameraDistance = 20;
 let cameraHeight = 5;
 const minCameraDistance = 8;
 const maxCameraDistance = 80;
+shipPerfReady = true;
+if (currentShipSpec) {
+    accelerationRate = currentShipSpec.accel;
+    maxSpeed = currentShipSpec.speed;
+}
 
 window.addEventListener('keydown', (e) => {
     switch(e.code) {
@@ -879,6 +1251,9 @@ function undockShip() {
     if (!activeDockStation) return;
     docked = false;
     hideStationScreen();
+    if (previewShipId && !ownedShipIds.has(previewShipId)) {
+        previewShipId = null;
+    }
     // launch hard away from station and disable docking briefly
     const dockPoint = activeDockStation.group.localToWorld(activeDockStation.dockLocalPoint.clone());
     const launchDir = dockPoint.clone().sub(activeDockStation.group.position).normalize();
@@ -967,7 +1342,7 @@ function updateHUD() {
             statusEl.id = 'status';
             hud.appendChild(statusEl);
         }
-        statusEl.textContent = `Hull:${hull.toFixed(1)}% Fuel:${fuel.toFixed(1)}% Credits:${credits} Cargo:${cargo}/${cargoCapacity} Eng:${engineLevel}`;
+        statusEl.textContent = `Hull:${hull.toFixed(1)}% Fuel:${fuel.toFixed(1)}% Credits:${credits} Cargo:${getCargoTotal()}/${cargoCapacity} Eng:${engineLevel}`;
 
         let targetEl = document.getElementById('target');
         if (!targetEl) {
@@ -1043,6 +1418,7 @@ function animate() {
     checkCollisions(delta);
     updateHUD();
     renderer.render(scene, camera);
+    renderShipPreview(delta);
 }
 animate();
 
