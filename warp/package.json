@@ -1,0 +1,9 @@
+{
+  "name": "warp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx live-server --port=8090 --open=./index.html"
+  }
+}

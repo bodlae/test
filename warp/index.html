@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seabattle</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <h1>Seabattle Command</h1>
+        <p>Budget is 20 points. Deploy on the vertical battlefield, then start battle.</p>
+        <div class="money" id="money"></div>
+        <div class="selected" id="selected">Selected: none</div>
+        <div class="selected" id="phaseLabel">Phase: deployment</div>
+        <div class="actions">
+          <button id="rotate">Rotate (R)</button>
+          <button id="startBattle">Start Battle</button>
+          <button id="clear">Clear Deployment</button>
+          <button id="reset">Restart Match</button>
+        </div>
+      </section>
+
+      <section class="panel roster" id="shopPanel">
+        <h2>Land Units</h2>
+        <div id="landShop"></div>
+        <h2>Air Units</h2>
+        <div id="airShop"></div>
+        <h2>Sea Units</h2>
+        <div id="seaShop"></div>
+        <h2>Support</h2>
+        <div id="supportShop"></div>
+      </section>
+
+      <section class="board-wrap panel" id="deployPanel">
+        <h2>Deployment</h2>
+        <div id="shotsInfoDeploy" class="selected"></div>
+        <div class="deploy-grid">
+          <div>
+            <h3>Your Field</h3>
+            <canvas id="board" width="340" height="700" aria-label="Deployment map"></canvas>
+          </div>
+          <div>
+            <h3>Enemy Field (preview)</h3>
+            <canvas id="enemyPreview" width="340" height="700" aria-label="Enemy preview field"></canvas>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i class="swatch land"></i> Land</span>
+          <span><i class="swatch sea"></i> Sea</span>
+          <span><i class="swatch coast"></i> Coastline</span>
+        </div>
+      </section>
+
+      <section class="board-wrap panel hidden" id="battlePanel">
+        <h2>Battle</h2>
+        <div id="shotsInfoBattle" class="selected"></div>
+        <div class="battle-layout">
+          <div class="battle-grid">
+            <div>
+              <h3>Your Fleet (enemy shots)</h3>
+              <canvas id="ownBoard" width="380" height="980" aria-label="Own board"></canvas>
+            </div>
+            <div>
+              <h3>Target Board (your shots)</h3>
+              <div class="battle-tools">
+                <button id="useRadarField">Use Radar (0)</button>
+                <button id="useBombField">Use Atom (0)</button>
+              </div>
+              <canvas id="targetBoard" width="380" height="980" aria-label="Target board"></canvas>
+            </div>
+          </div>
+          <aside class="battle-log-panel">
+            <h3>Battle Log</h3>
+            <div id="battleStatus" class="selected"></div>
+            <div id="battleLog" class="battle-log" aria-label="battle history"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
