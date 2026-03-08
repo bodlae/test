@@ -15,17 +15,26 @@
     <p id="turnMeta" class="turn-meta">Initiative: Russia</p>
     <p id="weatherLine" class="weather-line">Season rules will appear here.</p>
     <section id="eventPanel" class="event-panel hidden" aria-live="polite">
-      <p id="eventTitle" class="event-title"></p>
-      <p id="eventBlurb" class="event-blurb"></p>
-      <p id="eventEffect" class="event-effect"></p>
+      <div class="event-layout">
+        <img id="eventIcon" class="event-icon hidden" alt="" />
+        <div class="event-copy">
+          <p id="eventTitle" class="event-title"></p>
+          <p id="eventBlurb" class="event-blurb"></p>
+          <p id="eventEffect" class="event-effect"></p>
+        </div>
+      </div>
     </section>
-    <div class="turn-actions">
-      <button id="endTurnBtn" class="menu-btn end-turn" type="button" disabled>End Turn</button>
-    </div>
+    <section id="strategicCardsPanel" class="strategic-cards-panel hidden" aria-live="polite">
+      <p id="strategicCardsTitle" class="strategic-cards-title"></p>
+      <p id="strategicCardsMeta" class="strategic-cards-meta"></p>
+      <p id="strategicPoolDebug" class="strategic-cards-debug"></p>
+      <div id="strategicCardsHand" class="strategic-cards-hand"></div>
+    </section>
   </section>
 
   <section id="turnFooter" class="turn-footer hidden" aria-label="Turn actions">
     <button id="mainMenuBtn" class="menu-btn" type="button">Main Menu</button>
+    <button id="endTurnBtn" class="menu-btn end-turn" type="button" disabled>End Turn</button>
   </section>
 
   <main id="menuScreen" class="menu-screen">
@@ -53,6 +62,8 @@
     </form>
   </dialog>
 
+  <script src="events.js"></script>
+  <script src="strategic_cards.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

@@ -1,0 +1,54 @@
+## Project rules
+- All explicit project rules from the user must be added to this file by Codex.
+- Auto-save after every End Turn press (next-turn action).
+- Keep only the last 2 auto-saves.
+- Auto-save names must include the player name from New Game plus save time.
+- Strategic Action Card system:
+- Each player has their own strategic deck.
+- At the beginning of each strategic turn: shuffle deck, draw 5 cards, play up to 3 cards.
+- Played cards apply immediate effects; unplayed cards are discarded at end of that strategic turn.
+- Deck is reshuffled at the next strategic turn.
+- Always update the server after changing the game.
+- Strategic cards should be presented side-by-side like playing cards.
+- Any cards not played are immediately lost once no card plays remain.
+- Strategic card definitions and starting decks should live in a dedicated file (`strategic_cards.js`), not in `main.js`.
+- `Capture Hostomel`, `Pripet Marshes`, and `Azovstal Fortress` are play-once cards and must show an `X` icon.
+- Global Support for Russia and Ukraine moves in opposite directions (equal and opposite shift).
+- Russian event pictograms should be split from the source grid into individual assets and shown next to event text.
+- Each strategic turn adds one random use-once geopolitical card from a shared pool into the active player's strategic deck pool.
+- Show debug UI text for what cards remain in the geopolitical pool.
+- Western Training event effect: add 1 Research Card to the pool.
+- Add Russian geopolitical pool cards by quarter: Economic Blitzkrieg Repelled (2022 Q2), Geran-2 Strike Drones (2022 Q3), Surovikin Line (2022 Q4), War Economy (2023 Q1).
+
+## Turn sequence rules
+- A new campaign starts in Winter 2022, `strategic` phase, with Russia initiative.
+- Turn resolution is always two-step: actor step `0` (initiative side acts), then actor step `1` (opponent reacts).
+- Pressing End Turn from actor step `0` only switches to actor step `1`; it does not advance phase/season/year.
+- Pressing End Turn from actor step `1` resets actor step to `0` and advances the round unit.
+- Round-unit progression is:
+  - `strategic` -> `battle` turn 1 of the same season.
+  - `battle` turn N -> `battle` turn N+1 until seasonal battle-turn cap.
+  - final seasonal `battle` turn -> next season `strategic`.
+  - Year increases after Fall final `battle` turn when the season rolls into Winter.
+- Seasonal battle-turn caps are fixed: Spring 1, Summer 3, Fall 2, Winter 2.
+- Winter movement override (`winterFirstBattleNoSlow`) applies only on Winter battle turn 1 while not consumed.
+- The winter movement override is consumed immediately after Winter battle turn 1 is advanced.
+- TODO: Movement caps are currently HUD-level rules; enforce them in unit movement logic when movement implementation is added.
+- TODO: Investigate strategic deck thinning bug (deck appears to lose cards over time unexpectedly).
+
+## Event rules
+- Strategic event panels are shown during `strategic` phase using `events.js` triggers. Turn 1 uses real events; years 2022-2025 include template strategic events.
+- Winter 2022 strategic event for Russia:
+  - Title: `Special Operation`
+  - Blurb: By order of the Supreme Commander-in-Chief, your exercise transitions into a special military operation. Your objectives are the demilitarization and denazification of Ukraine. Your forces will strike Ukrainian military infrastructure and secure key cities. Ukrainian resistance is expected to collapse quickly under decisive action.
+  - Effect: first winter battle turn movement is not reduced.
+
+Effect: Movement speed on the first battle turn of winter is not reduced by winter conditions.
+  - effect: movement speed is not reduced for Russia during the first Winter battle turn.
+- Winter 2022 strategic event for Ukraine:
+  - Title: `We Are Here`
+  - Blurb: Russia has launched a full-scale invasion of Ukraine. We are here. We are not putting down our arms. We will defend our country and our independence. The enemy expects our collapse-but Ukraine will resist.
+  - Effect: Nationwide mobilization begins. Ukraine immediately unlocks Mobilization Tier 1. Territorial Defense units form across the country: spawn 1 Territorial Defense unit in each Ukrainian-controlled city. Ukrainian replacement rate is increased for the first strategic turn.
+- TODO: Territorial Defense city spawning is tracked via pending state; actual unit spawn execution requires map/city ownership + unit systems.
+  
+- ELITE-like game must live in a separate folder/environment so it does not interfere with Drone Wars.
