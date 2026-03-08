@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drone Wars 26</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;700&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="turnHud" class="turn-hud hidden" aria-live="polite">
+    <p id="turnFlavor" class="turn-flavor">Turn sequence not started. Start a new game.</p>
+    <p id="turnMeta" class="turn-meta">Initiative: Russia</p>
+    <p id="weatherLine" class="weather-line">Season rules will appear here.</p>
+    <section id="eventPanel" class="event-panel hidden" aria-live="polite">
+      <p id="eventTitle" class="event-title"></p>
+      <p id="eventBlurb" class="event-blurb"></p>
+      <p id="eventEffect" class="event-effect"></p>
+    </section>
+    <div class="turn-actions">
+      <button id="endTurnBtn" class="menu-btn end-turn" type="button" disabled>End Turn</button>
+    </div>
+  </section>
+
+  <section id="turnFooter" class="turn-footer hidden" aria-label="Turn actions">
+    <button id="mainMenuBtn" class="menu-btn" type="button">Main Menu</button>
+  </section>
+
+  <main id="menuScreen" class="menu-screen">
+    <nav class="menu-actions" aria-label="Main menu">
+      <button id="newGameBtn" class="menu-btn">New Game</button>
+      <button id="continueBtn" class="menu-btn">Continue</button>
+      <button id="settingsBtn" class="menu-btn">Settings</button>
+      <button id="quitBtn" class="menu-btn danger">Quit</button>
+      <input id="loadSaveInput" type="file" accept=".json,application/json" hidden />
+    </nav>
+
+    <p class="player-line" id="playerLine">Commander: Operator</p>
+    <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" id="settingsForm">
+      <h2>Settings</h2>
+      <label for="playerNameInput">Player Name</label>
+      <input id="playerNameInput" name="playerNameInput" type="text" maxlength="24" required />
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button id="saveSettingsBtn" value="default">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="main.js"></script>
+</body>
+</html>
