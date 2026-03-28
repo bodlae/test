@@ -22,6 +22,13 @@
         effectText: "Launch 1 Generation 1 rocket strike.",
         icon: "assets/cards/rocket.png",
       },
+      rocketSalvo: {
+        id: "rocketSalvo",
+        name: "Rocket Card",
+        effectText: "Launch 2 Generation 1 rocket attacks. Use once.",
+        icon: "assets/cards/rocket.png",
+        playOnce: true,
+      },
       production: {
         id: "production",
         name: "Production Card",
@@ -33,6 +40,13 @@
         name: "Propaganda Card",
         effectText: "Increase Global Support by +1.",
         icon: "assets/cards/propaganda.png",
+      },
+      moskvaSunk: {
+        id: "moskvaSunk",
+        name: "Event Title: Moskva Sunk",
+        effectText: "Blurb: Ukraine sinks the cruiser Moskva, flagship of Russia's Black Sea Fleet. Game Effect: Shift Global Support by 2 in Ukraine's favor. Use once.",
+        icon: "assets/cards/propaganda.png",
+        playOnce: true,
       },
       captureHostomel: {
         id: "captureHostomel",
@@ -106,7 +120,8 @@
       blackSeaGrainDeal: {
         id: "blackSeaGrainDeal",
         name: "Black Sea Grain Deal",
-        effectText: "This card remains in Ukraine's strategy card pool after being played. Ukraine gains 1 Production Card.",
+        effectText: "Ukraine gains 1 Production Card.",
+        playOnce: true,
       },
       patriotBatteries: {
         id: "patriotBatteries",
@@ -148,9 +163,8 @@
     startingDecks: {
       [PLAYERS.russia]: [
         "research",
-        "research",
-        "rocket",
-        "rocket",
+        "rocketSalvo",
+        "rocketSalvo",
         "rocket",
         "production",
         "production",
@@ -162,8 +176,7 @@
         "research",
         "research",
         "production",
-        "production",
-        "propaganda",
+        "moskvaSunk",
         "propaganda",
         "propaganda",
         "propaganda",

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research Tree</title>
+  <link rel="stylesheet" href="researchtree.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>Research Tree</h1>
+      </div>
+      <div class="controls">
+        <div class="budget-panel">
+          <span class="budget-label">Research Budget</span>
+          <strong id="budgetValue">-</strong>
+        </div>
+        <button type="button" id="resetView">Reset View</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <section class="canvas-frame">
+        <canvas id="researchTreeCanvas" aria-label="Research tree canvas"></canvas>
+      </section>
+
+      <aside class="detail-panel" aria-live="polite">
+        <div class="detail-card">
+          <p class="eyebrow">Selected Technology</p>
+          <h2 id="detailTitle">Loading tech tree...</h2>
+          <p id="detailBranch" class="detail-meta"></p>
+          <p id="detailRequirement" class="detail-copy"></p>
+          <dl class="detail-grid">
+            <div>
+              <dt>Type</dt>
+              <dd id="detailType">-</dd>
+            </div>
+            <div>
+              <dt>Level</dt>
+              <dd id="detailLevel">-</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd id="detailStatus">-</dd>
+            </div>
+          </dl>
+          <div class="detail-block">
+            <h3>Research Cost</h3>
+            <p id="detailCost" class="detail-copy">-</p>
+          </div>
+          <div class="detail-block">
+            <h3>Main Effect</h3>
+            <p id="detailEffect" class="detail-copy">-</p>
+          </div>
+          <div class="detail-block">
+            <h3>Counter Unlocked</h3>
+            <p id="detailCounter" class="detail-copy">-</p>
+          </div>
+          <div class="detail-block">
+            <h3>Active Consequences</h3>
+            <div id="statusEffectList" class="status-effect-list">
+              <p class="detail-copy">No active status effects.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="researchtree.js"></script>
+</body>
+</html>

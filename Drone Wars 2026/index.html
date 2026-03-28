@@ -14,6 +14,38 @@
     <p id="turnFlavor" class="turn-flavor">Turn sequence not started. Start a new game.</p>
     <p id="turnMeta" class="turn-meta">Initiative: Russia</p>
     <p id="weatherLine" class="weather-line">Season rules will appear here.</p>
+    <section id="battlefieldPanel" class="battlefield-panel hidden" aria-label="Battlefield">
+      <div class="battlefield-stage">
+        <aside class="info-controls-stub" aria-label="Information and controls stub">
+          <p class="info-controls-title">Information/controls stub</p>
+          <section class="ammo-track-panel" aria-label="Artillery ammunition track">
+            <div class="ammo-track-header">
+              <p class="ammo-track-title">Artillery Ammo</p>
+              <p class="ammo-track-subtitle">Vertical reserve track</p>
+            </div>
+            <div class="ammo-track-columns">
+              <div class="ammo-track-column">
+                <p class="ammo-track-side">Russia</p>
+                <div id="russiaAmmoTrack" class="ammo-track" aria-hidden="true"></div>
+                <p id="russiaAmmoLabel" class="ammo-track-label"></p>
+              </div>
+              <div class="ammo-track-column">
+                <p class="ammo-track-side">Ukraine</p>
+                <div id="ukraineAmmoTrack" class="ammo-track" aria-hidden="true"></div>
+                <p id="ukraineAmmoLabel" class="ammo-track-label"></p>
+              </div>
+            </div>
+          </section>
+          <p id="infoControlsMeta" class="info-controls-meta"></p>
+        </aside>
+        <div class="battlefield-wrap">
+          <p class="battlefield-title">Battlefield Stub (20x16 Hex Grid)</p>
+          <div class="battlefield-map-canvas">
+            <svg id="battlefieldSvg" class="battlefield-svg" role="img" aria-label="Stubbed battlefield map"></svg>
+          </div>
+        </div>
+      </div>
+    </section>
     <section id="eventPanel" class="event-panel hidden" aria-live="polite">
       <div class="event-layout">
         <img id="eventIcon" class="event-icon hidden" alt="" />
@@ -30,10 +62,21 @@
       <p id="strategicPoolDebug" class="strategic-cards-debug"></p>
       <div id="strategicCardsHand" class="strategic-cards-hand"></div>
     </section>
+    <section id="techTreePanel" class="tech-tree-panel hidden" aria-label="Technology tree">
+      <iframe
+        id="techTreeFrame"
+        class="tech-tree-frame"
+        title="Drone Wars technology tree"
+        loading="lazy"
+      ></iframe>
+    </section>
   </section>
 
   <section id="turnFooter" class="turn-footer hidden" aria-label="Turn actions">
     <button id="mainMenuBtn" class="menu-btn" type="button">Main Menu</button>
+    <button id="strategicHandBtn" class="menu-btn hidden" type="button">Strategic Hand</button>
+    <button id="techTreeBtn" class="menu-btn" type="button">Tech Tree</button>
+    <button id="toggleBattlefieldBtn" class="menu-btn" type="button">Battlefield</button>
     <button id="endTurnBtn" class="menu-btn end-turn" type="button" disabled>End Turn</button>
   </section>
 

@@ -10,7 +10,7 @@
 - Deck is reshuffled at the next strategic turn.
 - Always update the server after changing the game.
 - Strategic cards should be presented side-by-side like playing cards.
-- Any cards not played are immediately lost once no card plays remain.
+- Any cards not played are discarded to the discard pile once no card plays remain.
 - Strategic card definitions and starting decks should live in a dedicated file (`strategic_cards.js`), not in `main.js`.
 - `Capture Hostomel`, `Pripet Marshes`, and `Azovstal Fortress` are play-once cards and must show an `X` icon.
 - Global Support for Russia and Ukraine moves in opposite directions (equal and opposite shift).
@@ -19,6 +19,16 @@
 - Show debug UI text for what cards remain in the geopolitical pool.
 - Western Training event effect: add 1 Research Card to the pool.
 - Add Russian geopolitical pool cards by quarter: Economic Blitzkrieg Repelled (2022 Q2), Geran-2 Strike Drones (2022 Q3), Surovikin Line (2022 Q4), War Economy (2023 Q1).
+- Russia starter deck adjustment: remove 1 Research card; convert 2 Rocket cards into use-once 2-attack Rocket cards.
+- Ukraine starter deck adjustment: remove 1 Production card; convert 1 Propaganda card into `Moskva Sunk` (use-once, Global Support shift +2 for Ukraine).
+- Opening force setup rewrite:
+- Russia starts with no drones on the board.
+- Ukraine starts with half its prior drone strength, and those drones begin only in the North theater.
+- Ukraine's opening drone-artillery bonus becomes a permanent rule of battle instead of a first-turn-only rule.
+- The stub battlefield must be divided into North, East, and South theaters using horizontal theater lines and show starting units on the board.
+- Starting units must be placed in actual hexes, spread within their theater, with stacking limit 3.
+- Starting units should be spread randomly within their theater, with stacking limit 2.
+- Add a vertical artillery ammo track; Russia starts with a large advantage.
 
 ## Turn sequence rules
 - A new campaign starts in Winter 2022, `strategic` phase, with Russia initiative.
@@ -42,9 +52,6 @@
   - Title: `Special Operation`
   - Blurb: By order of the Supreme Commander-in-Chief, your exercise transitions into a special military operation. Your objectives are the demilitarization and denazification of Ukraine. Your forces will strike Ukrainian military infrastructure and secure key cities. Ukrainian resistance is expected to collapse quickly under decisive action.
   - Effect: first winter battle turn movement is not reduced.
-
-Effect: Movement speed on the first battle turn of winter is not reduced by winter conditions.
-  - effect: movement speed is not reduced for Russia during the first Winter battle turn.
 - Winter 2022 strategic event for Ukraine:
   - Title: `We Are Here`
   - Blurb: Russia has launched a full-scale invasion of Ukraine. We are here. We are not putting down our arms. We will defend our country and our independence. The enemy expects our collapse-but Ukraine will resist.
