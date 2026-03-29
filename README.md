@@ -1,23 +1,17 @@
-# ELITE-Style Wireframe Space Game
+# VIBECODING
 
-This simple project demonstrates a 3D wireframe universe inspired by the classic game *Elite*.
-It uses [Three.js](https://threejs.org) to render a basic scene with a ship, planet, station, and sun.
+Projects are isolated by folder:
 
-## Getting Started
+- `Drone Wars 2026/` -> Drone Wars game loop
+- elite_like/ -> ELITE-like game
+- warp/ and gui-researchtree/ -> other experiments
 
-1. Install dependencies (already done via `npm install`).
-2. Run the project with:
-   ```sh
-   npm run start
-   ```
-   This uses `live-server` to serve the files on http://127.0.0.1:8080
+Fresh setup:
 
-3. Open the browser to the address above and you should see a rotating wireframe scene.
+- install Node.js 18+ if needed
+- run `npm install`
 
-## Development
-- `main.js` contains the scene setup and animation logic.
-- Feel free to add more wireframe objects, controls, or game mechanics!
+Run scripts:
 
-## Notes
-- This is a starting point; you can expand it into a full game with controls, collision, etc.
-- The project is intentionally minimal and uses plain JavaScript modules.
+- `npm start` or `npm run start:dronewars` starts Drone Wars on port 8080 from `Drone Wars 2026/`
+- `npm run start:elite` starts ELITE-like game on port 8080 (run separately)
