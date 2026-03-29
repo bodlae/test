@@ -1,17 +1,11 @@
-# VIBECODING
+# Drone Wars 2026
 
-Projects are isolated by folder:
+Run from the repository root:
 
-- `Drone Wars 2026/` -> Drone Wars game loop
-- elite_like/ -> ELITE-like game
-- warp/ and gui-researchtree/ -> other experiments
-
-Fresh setup:
-
-- install Node.js 18+ if needed
+- install Node.js 18+
 - run `npm install`
+- run `npm start`
 
-Run scripts:
+Open:
 
-- `npm start` or `npm run start:dronewars` starts Drone Wars on port 8080 from `Drone Wars 2026/`
-- `npm run start:elite` starts ELITE-like game on port 8080 (run separately)
+- `http://127.0.0.1:8080`

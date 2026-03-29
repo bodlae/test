@@ -6,7 +6,6 @@
   "scripts": {
     "start": "live-server \"Drone Wars 2026\" --port=8080 --no-browser",
     "start:dronewars": "live-server \"Drone Wars 2026\" --port=8080 --no-browser",
-    "start:elite": "live-server elite_like --port=8080 --no-browser",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
